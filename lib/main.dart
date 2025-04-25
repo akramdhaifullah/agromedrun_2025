@@ -170,6 +170,7 @@ class _ResultPageState extends State<ResultPage> {
                         ),
                         ListView.builder(
                           shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
                           itemCount: visibleResults.length,
                           itemBuilder: (context, index) {
                             final result = visibleResults[index];
@@ -376,17 +377,7 @@ class _ResultPageState extends State<ResultPage> {
   }
 
   List<Widget> _buildPaginationButtons() {
-    int totalPages =
-        (allResults
-                    .where(
-                      (r) => r['name'].toString().toLowerCase().contains(
-                        searchQuery.toLowerCase(),
-                      ),
-                    )
-                    .length /
-                resultsPerPage)
-            .ceil();
-
+    int totalPages = this.totalPages();
     List<Widget> buttons = [];
 
     void addPage(int page) {
@@ -395,14 +386,14 @@ class _ResultPageState extends State<ResultPage> {
 
     void addEllipsis() {
       buttons.add(
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
           child: Text('...', style: TextStyle(color: Colors.grey)),
         ),
       );
     }
 
-    // Previous button
+    // Previous arrow
     buttons.add(
       _buildArrowButton("<", currentPage > 1, () {
         setState(() {
@@ -413,45 +404,37 @@ class _ResultPageState extends State<ResultPage> {
     );
 
     if (totalPages <= 7) {
-      // Show all pages if totalPages is 7 or less
       for (int i = 1; i <= totalPages; i++) {
         addPage(i);
       }
-    } else if (currentPage <= 5) {
-      // Show pages 1-7, then ellipsis + last 3
-      for (int i = 1; i <= 7; i++) {
+    } else if (currentPage <= 4) {
+      // Show pages 1-4, ..., last 2
+      for (int i = 1; i <= 4; i++) {
         addPage(i);
       }
       addEllipsis();
-      for (int i = totalPages - 2; i <= totalPages; i++) {
+      addPage(totalPages - 1);
+      addPage(totalPages);
+    } else if (currentPage >= totalPages - 3) {
+      // Show 1, 2, ..., last 4 pages
+      addPage(1);
+      addPage(2);
+      addEllipsis();
+      for (int i = totalPages - 3; i <= totalPages; i++) {
         addPage(i);
       }
     } else {
-      // Show first 3
-      for (int i = 1; i <= 3; i++) {
-        addPage(i);
-      }
-
+      // Show 1, 2, ..., currentPage, ..., last 2
+      addPage(1);
+      addPage(2);
       addEllipsis();
-
-      // Show currentPage ±1
-      for (int i = currentPage - 1; i <= currentPage + 1; i++) {
-        if (i > 3 && i < totalPages - 2) {
-          addPage(i);
-        }
-      }
-
-      if (currentPage < totalPages - 3) {
-        addEllipsis();
-      }
-
-      // Last 3 pages
-      for (int i = totalPages - 2; i <= totalPages; i++) {
-        addPage(i);
-      }
+      addPage(currentPage);
+      addEllipsis();
+      addPage(totalPages - 1);
+      addPage(totalPages);
     }
 
-    // Next button
+    // Next arrow
     buttons.add(
       _buildArrowButton(">", currentPage < totalPages, () {
         setState(() {
