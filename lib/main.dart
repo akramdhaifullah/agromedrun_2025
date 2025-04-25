@@ -36,6 +36,8 @@ class _ResultPageState extends State<ResultPage> {
   String searchQuery = '';
   bool isLoading = true;
   int? _hoveredIndex;
+  int currentPage = 1;
+  int resultsPerPage = 10;
 
   @override
   void initState() {
@@ -62,22 +64,18 @@ class _ResultPageState extends State<ResultPage> {
           );
         }).toList();
 
-    setState(() {
-      visibleResults = filtered.take(visibleCount).toList();
-    });
-  }
+    final start = (currentPage - 1) * resultsPerPage;
+    final end = (start + resultsPerPage).clamp(0, filtered.length);
 
-  void loadMore() {
     setState(() {
-      visibleCount += 10;
-      updateVisibleResults();
+      visibleResults = filtered.sublist(start, end);
     });
   }
 
   void onSearchChanged(String query) {
     setState(() {
       searchQuery = query;
-      visibleCount = 10;
+      currentPage = 1;
       updateVisibleResults();
     });
   }
@@ -85,7 +83,6 @@ class _ResultPageState extends State<ResultPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.white),
       backgroundColor: Colors.white,
       body:
           isLoading
@@ -101,7 +98,7 @@ class _ResultPageState extends State<ResultPage> {
                         "AGROMEDRUN 5K 2025 Results",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 48,
+                          fontSize: 36,
                         ),
                       ),
                       SizedBox(height: 16),
@@ -300,19 +297,10 @@ class _ResultPageState extends State<ResultPage> {
                         ),
                       ),
                       SizedBox(height: 16),
-                      if (visibleResults.length <
-                          allResults.where((r) {
-                            return r['name'].toString().toLowerCase().contains(
-                              searchQuery.toLowerCase(),
-                            );
-                          }).length)
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: ElevatedButton(
-                            onPressed: loadMore,
-                            child: const Text('Load More'),
-                          ),
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: _buildPaginationButtons(),
+                      ),
                     ],
                   ),
                 ),
@@ -341,6 +329,155 @@ class _ResultPageState extends State<ResultPage> {
     } catch (e) {
       return 'Invalid';
     }
+  }
+
+  Widget _buildArrowButton(String label, bool enabled, VoidCallback onTap) {
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          color: enabled ? Colors.grey[300] : Colors.grey[200],
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: enabled ? Colors.black87 : Colors.grey,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPageNumber(int page) {
+    final isSelected = page == currentPage;
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          currentPage = page;
+          updateVisibleResults();
+        });
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 2),
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.grey[800] : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Colors.grey),
+        ),
+        child: Text(
+          '$page',
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  int totalPages() {
+    final filtered =
+        allResults.where((r) {
+          return r['name'].toString().toLowerCase().contains(
+            searchQuery.toLowerCase(),
+          );
+        }).toList();
+
+    return (filtered.length / resultsPerPage).ceil();
+  }
+
+  List<Widget> _buildPaginationButtons() {
+    int totalPages =
+        (allResults
+                    .where(
+                      (r) => r['name'].toString().toLowerCase().contains(
+                        searchQuery.toLowerCase(),
+                      ),
+                    )
+                    .length /
+                resultsPerPage)
+            .ceil();
+
+    List<Widget> buttons = [];
+
+    void addPage(int page) {
+      buttons.add(_buildPageNumber(page));
+    }
+
+    void addEllipsis() {
+      buttons.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text('...', style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
+
+    // Previous button
+    buttons.add(
+      _buildArrowButton("<", currentPage > 1, () {
+        setState(() {
+          currentPage--;
+          updateVisibleResults();
+        });
+      }),
+    );
+
+    if (totalPages <= 7) {
+      // Show all pages if totalPages is 7 or less
+      for (int i = 1; i <= totalPages; i++) {
+        addPage(i);
+      }
+    } else if (currentPage <= 5) {
+      // Show pages 1-7, then ellipsis + last 3
+      for (int i = 1; i <= 7; i++) {
+        addPage(i);
+      }
+      addEllipsis();
+      for (int i = totalPages - 2; i <= totalPages; i++) {
+        addPage(i);
+      }
+    } else {
+      // Show first 3
+      for (int i = 1; i <= 3; i++) {
+        addPage(i);
+      }
+
+      addEllipsis();
+
+      // Show currentPage ±1
+      for (int i = currentPage - 1; i <= currentPage + 1; i++) {
+        if (i > 3 && i < totalPages - 2) {
+          addPage(i);
+        }
+      }
+
+      if (currentPage < totalPages - 3) {
+        addEllipsis();
+      }
+
+      // Last 3 pages
+      for (int i = totalPages - 2; i <= totalPages; i++) {
+        addPage(i);
+      }
+    }
+
+    // Next button
+    buttons.add(
+      _buildArrowButton(">", currentPage < totalPages, () {
+        setState(() {
+          currentPage++;
+          updateVisibleResults();
+        });
+      }),
+    );
+
+    return buttons;
   }
 }
 
