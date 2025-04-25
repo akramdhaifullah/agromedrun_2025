@@ -141,98 +141,43 @@ class _ResultPageState extends State<ResultPage> {
     );
   }
 
-  Widget _buildTableHeader(bool isWideScreen) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 70,
-            child: Text(
-              "Place",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              isWideScreen ? "Name" : "Name (BIB)",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-          if (isWideScreen)
-            Expanded(
-              child: Text(
-                "BIB Number",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-          Expanded(
-            child: Text(
-              "Time",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              "Gender",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
+  String _formatDuration(dynamic start, dynamic end, dynamic dnfTag) {
+    if (dnfTag) {
+      return "DNF";
+    } else {
+      try {
+        final format = DateFormat('dd-MM-yyyy HH:mm:ss');
+        final startTime = format.parse(start);
+        final endTime = format.parse(end);
+        final duration = endTime.difference(startTime);
+
+        final hours = duration.inHours.toString().padLeft(2, '0');
+        final minutes = duration.inMinutes
+            .remainder(60)
+            .toString()
+            .padLeft(2, '0');
+        final seconds = duration.inSeconds
+            .remainder(60)
+            .toString()
+            .padLeft(2, '0');
+
+        return '$hours:$minutes:$seconds';
+      } catch (e) {
+        return 'Invalid';
+      }
+    }
   }
 
-  // List of participants
-  Widget _buildParticipantsList(bool isWideScreen) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      itemCount: visibleResults.length,
-      itemBuilder: (context, index) {
-        final result = visibleResults[index];
-        final cp0 = result['cp0'];
-        final cp1 = result['cp1'];
-        final time =
-            (cp0 != null && cp1 != null) ? _formatDuration(cp0, cp1) : "N/A";
-
-        String genderEng = _translateGender(result['gender']);
-        final isGrey = index % 2 == 0;
-
-        return Column(
-          children: [
-            Container(
-              color: isGrey ? Colors.grey[300] : Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-              child: Row(
-                children: [
-                  SizedBox(width: 70, child: Text("-")),
-                  Expanded(
-                    child: _buildParticipantNameCell(
-                      context,
-                      result,
-                      index,
-                      isWideScreen,
-                    ),
-                  ),
-                  if (isWideScreen)
-                    Expanded(
-                      child: Text(
-                        result['bib']?.toString() ?? '',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  Expanded(child: Text(time, style: TextStyle(fontSize: 16))),
-                  Expanded(
-                    child: Text(genderEng, style: TextStyle(fontSize: 16)),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
+  // Helper method to translate gender
+  String _translateGender(String? gender) {
+    final genderLower = gender?.toString().toLowerCase();
+    if (genderLower == 'perempuan') {
+      return 'Female';
+    } else if (genderLower == 'laki-laki') {
+      return 'Male';
+    } else {
+      return '';
+    }
   }
 
   Widget _buildParticipantNameCell(
@@ -280,39 +225,101 @@ class _ResultPageState extends State<ResultPage> {
     );
   }
 
-  // Helper method to translate gender
-  String _translateGender(String? gender) {
-    final genderLower = gender?.toString().toLowerCase();
-    if (genderLower == 'perempuan') {
-      return 'Female';
-    } else if (genderLower == 'laki-laki') {
-      return 'Male';
-    } else {
-      return '';
-    }
+  // List of participants
+  Widget _buildParticipantsList(bool isWideScreen) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      itemCount: visibleResults.length,
+      itemBuilder: (context, index) {
+        final result = visibleResults[index];
+        final cp0 = result['cp0'];
+        final cp1 = result['cp1'];
+        final dnfTag = result['is_dnf'];
+        final time =
+            (cp0 != null && cp1 != null)
+                ? _formatDuration(cp0, cp1, dnfTag)
+                : "N/A";
+
+        String genderEng = _translateGender(result['gender']);
+        final isGrey = index % 2 == 0;
+
+        return Column(
+          children: [
+            Container(
+              color: isGrey ? Colors.grey[300] : Colors.white,
+              padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              child: Row(
+                children: [
+                  SizedBox(width: 70, child: Text("-")),
+                  Expanded(
+                    child: _buildParticipantNameCell(
+                      context,
+                      result,
+                      index,
+                      isWideScreen,
+                    ),
+                  ),
+                  if (isWideScreen)
+                    Expanded(
+                      child: Text(
+                        result['bib']?.toString() ?? '',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  Expanded(child: Text(time, style: TextStyle(fontSize: 16))),
+                  Expanded(
+                    child: Text(genderEng, style: TextStyle(fontSize: 16)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
-  String _formatDuration(dynamic start, dynamic end) {
-    try {
-      final format = DateFormat('dd-MM-yyyy HH:mm:ss');
-      final startTime = format.parse(start);
-      final endTime = format.parse(end);
-      final duration = endTime.difference(startTime);
-
-      final hours = duration.inHours.toString().padLeft(2, '0');
-      final minutes = duration.inMinutes
-          .remainder(60)
-          .toString()
-          .padLeft(2, '0');
-      final seconds = duration.inSeconds
-          .remainder(60)
-          .toString()
-          .padLeft(2, '0');
-
-      return '$hours:$minutes:$seconds';
-    } catch (e) {
-      return 'Invalid';
-    }
+  Widget _buildTableHeader(bool isWideScreen) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 70,
+            child: Text(
+              "Place",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              isWideScreen ? "Name" : "Name (BIB)",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+          if (isWideScreen)
+            Expanded(
+              child: Text(
+                "BIB Number",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          Expanded(
+            child: Text(
+              "Time",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              "Gender",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildArrowButton(String label, bool enabled, VoidCallback onTap) {
