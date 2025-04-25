@@ -37,6 +37,7 @@ class _ResultPageState extends State<ResultPage> {
   int? _hoveredIndex;
   int currentPage = 1;
   int resultsPerPage = 19;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -87,6 +88,7 @@ class _ResultPageState extends State<ResultPage> {
           isLoading
               ? Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
+                controller: _scrollController,
                 child: Center(
                   child: Container(
                     constraints: BoxConstraints(maxWidth: 1200),
@@ -345,6 +347,9 @@ class _ResultPageState extends State<ResultPage> {
           currentPage = page;
           updateVisibleResults();
         });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        });
       },
       child: Container(
         margin: EdgeInsets.symmetric(horizontal: 2),
@@ -400,6 +405,9 @@ class _ResultPageState extends State<ResultPage> {
           currentPage--;
           updateVisibleResults();
         });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        });
       }),
     );
 
@@ -440,6 +448,9 @@ class _ResultPageState extends State<ResultPage> {
         setState(() {
           currentPage++;
           updateVisibleResults();
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
         });
       }),
     );
