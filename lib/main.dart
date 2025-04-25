@@ -32,12 +32,11 @@ class ResultPage extends StatefulWidget {
 class _ResultPageState extends State<ResultPage> {
   List<Map<String, dynamic>> allResults = [];
   List<Map<String, dynamic>> visibleResults = [];
-  int visibleCount = 10;
   String searchQuery = '';
   bool isLoading = true;
   int? _hoveredIndex;
   int currentPage = 1;
-  int resultsPerPage = 10;
+  int resultsPerPage = 19;
 
   @override
   void initState() {
@@ -87,221 +86,206 @@ class _ResultPageState extends State<ResultPage> {
       body:
           isLoading
               ? Center(child: CircularProgressIndicator())
-              : Center(
-                child: Container(
-                  constraints: BoxConstraints(maxWidth: 1200),
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "AGROMEDRUN 5K 2025 Results",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 36,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      SizedBox(
-                        width: 320,
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: "Enter participant name",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+              : SingleChildScrollView(
+                child: Center(
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: 1200),
+                    margin: EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "AGROMEDRUN 5K 2025 Results",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 36,
                           ),
-                          onChanged: onSearchChanged,
                         ),
-                      ),
-                      SizedBox(height: 24),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Container(
+                        SizedBox(height: 16),
+                        SizedBox(
+                          width: 320,
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: "Enter participant name",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onChanged: onSearchChanged,
+                          ),
+                        ),
+                        SizedBox(height: 24),
+                        Container(
+                          padding: EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 70,
+                                child: Text(
+                                  "Place",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  "Name",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  "BIB Number",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  "Time",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  "Gender",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: visibleResults.length,
+                          itemBuilder: (context, index) {
+                            final result = visibleResults[index];
+
+                            final cp0 = result['cp0'];
+                            final cp1 = result['cp1'];
+
+                            final time =
+                                (cp0 != null && cp1 != null)
+                                    ? _formatDuration(cp0, cp1)
+                                    : "N/A";
+
+                            String genderEng =
+                                (() {
+                                  final gender =
+                                      result['gender']
+                                          ?.toString()
+                                          .toLowerCase();
+                                  if (gender == 'perempuan') {
+                                    return 'Female';
+                                  } else if (gender == 'laki-laki') {
+                                    return 'Male';
+                                  } else {
+                                    return '';
+                                  }
+                                })();
+
+                            final isGrey = index % 2 == 0;
+                            return Container(
+                              color: isGrey ? Colors.grey[300] : Colors.white,
                               padding: EdgeInsets.symmetric(
                                 vertical: 16,
                                 horizontal: 16,
                               ),
                               child: Row(
                                 children: [
+                                  SizedBox(width: 70, child: Text("-")),
                                   Expanded(
-                                    child: Text(
-                                      'Place',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                                    child: MouseRegion(
+                                      onEnter:
+                                          (_) => setState(
+                                            () => _hoveredIndex = index,
+                                          ),
+                                      onExit:
+                                          (_) => setState(
+                                            () => _hoveredIndex = null,
+                                          ),
+                                      cursor: SystemMouseCursors.click,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          // Navigator.push(
+                                          //   context,
+                                          //   MaterialPageRoute(
+                                          //     builder:
+                                          //         (context) =>
+                                          //             ParticipantDetailPage(
+                                          //               participant:
+                                          //                   result,
+                                          //             ),
+                                          //   ),
+                                          // );
+                                        },
+                                        child: Container(
+                                          padding: EdgeInsets.only(right: 16),
+                                          child: Text(
+                                            result['name'] ?? '',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color:
+                                                  _hoveredIndex == index
+                                                      ? Colors.blue[800]
+                                                      : Colors.blue,
+                                              decoration:
+                                                  _hoveredIndex == index
+                                                      ? TextDecoration.underline
+                                                      : TextDecoration.none,
+                                              decorationColor:
+                                                  _hoveredIndex == index
+                                                      ? Colors.blue[800]
+                                                      : Colors.blue,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
                                   Expanded(
                                     child: Text(
-                                      'Name',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      result['bib']?.toString() ?? '',
+                                      style: TextStyle(fontSize: 16),
                                     ),
                                   ),
                                   Expanded(
                                     child: Text(
-                                      'BIB',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      time,
+                                      style: TextStyle(fontSize: 16),
                                     ),
                                   ),
                                   Expanded(
                                     child: Text(
-                                      'Time',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      'Gender',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      genderEng,
+                                      style: TextStyle(fontSize: 16),
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            Expanded(
-                              child: ListView.builder(
-                                itemCount: visibleResults.length,
-                                itemBuilder: (context, index) {
-                                  final result = visibleResults[index];
-
-                                  final cp0 = result['cp0'];
-                                  final cp1 = result['cp1'];
-
-                                  final time =
-                                      (cp0 != null && cp1 != null)
-                                          ? _formatDuration(cp0, cp1)
-                                          : "N/A";
-
-                                  String genderEng =
-                                      (() {
-                                        final gender =
-                                            result['gender']
-                                                ?.toString()
-                                                .toLowerCase();
-                                        if (gender == 'perempuan') {
-                                          return 'Female';
-                                        } else if (gender == 'laki-laki') {
-                                          return 'Male';
-                                        } else {
-                                          return '';
-                                        }
-                                      })();
-
-                                  final isGrey = index % 2 == 0;
-                                  return Container(
-                                    color:
-                                        isGrey
-                                            ? Colors.grey[300]
-                                            : Colors.white,
-                                    padding: EdgeInsets.symmetric(
-                                      vertical: 16,
-                                      horizontal: 16,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Expanded(child: Text("-")),
-                                        Expanded(
-                                          child: MouseRegion(
-                                            onEnter:
-                                                (_) => setState(
-                                                  () => _hoveredIndex = index,
-                                                ),
-                                            onExit:
-                                                (_) => setState(
-                                                  () => _hoveredIndex = null,
-                                                ),
-                                            cursor: SystemMouseCursors.click,
-                                            child: GestureDetector(
-                                              onTap: () {
-                                                // Navigator.push(
-                                                //   context,
-                                                //   MaterialPageRoute(
-                                                //     builder:
-                                                //         (context) =>
-                                                //             ParticipantDetailPage(
-                                                //               participant:
-                                                //                   result,
-                                                //             ),
-                                                //   ),
-                                                // );
-                                              },
-                                              child: Container(
-                                                padding: EdgeInsets.only(
-                                                  right: 16,
-                                                ),
-                                                child: Text(
-                                                  result['name'] ?? '',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    color:
-                                                        _hoveredIndex == index
-                                                            ? Colors.blue[800]
-                                                            : Colors.blue,
-                                                    decoration:
-                                                        _hoveredIndex == index
-                                                            ? TextDecoration
-                                                                .underline
-                                                            : TextDecoration
-                                                                .none,
-                                                    decorationColor:
-                                                        _hoveredIndex == index
-                                                            ? Colors.blue[800]
-                                                            : Colors.blue,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-
-                                        Expanded(
-                                          child: Text(
-                                            result['bib']?.toString() ?? '',
-                                            style: TextStyle(fontSize: 16),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Text(
-                                            time,
-                                            style: TextStyle(fontSize: 16),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Text(
-                                            genderEng,
-                                            style: TextStyle(fontSize: 16),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
+                            );
+                          },
                         ),
-                      ),
-                      SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: _buildPaginationButtons(),
-                      ),
-                    ],
+                        SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: _buildPaginationButtons(),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
