@@ -1,122 +1,406 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: "https://hieyauprjmejzhwxsdld.supabase.co",
+    anonKey:
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpZXlhdXByam1lanpod3hzZGxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDI5MDk3OTUsImV4cCI6MjAxODQ4NTc5NX0.plpTl75gOWjFVK0Ypt7DX75jLnTzts_p7p-zBk1U6tE",
+  );
+  runApp(RaceResultApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class RaceResultApp extends StatelessWidget {
+  const RaceResultApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+    return MaterialApp(home: ResultPage());
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class ResultPage extends StatefulWidget {
+  const ResultPage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<ResultPage> createState() => _ResultPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _ResultPageState extends State<ResultPage> {
+  List<Map<String, dynamic>> allResults = [];
+  List<Map<String, dynamic>> visibleResults = [];
+  int visibleCount = 10;
+  String searchQuery = '';
+  bool isLoading = true;
+  int? _hoveredIndex;
 
-  void _incrementCounter() {
+  @override
+  void initState() {
+    super.initState();
+    fetchResults();
+  }
+
+  Future<void> fetchResults() async {
+    final response =
+        await Supabase.instance.client.from('rts_agromed').select();
+
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      allResults = List<Map<String, dynamic>>.from(response);
+      updateVisibleResults();
+      isLoading = false;
+    });
+  }
+
+  void updateVisibleResults() {
+    final filtered =
+        allResults.where((result) {
+          return result['name'].toString().toLowerCase().contains(
+            searchQuery.toLowerCase(),
+          );
+        }).toList();
+
+    setState(() {
+      visibleResults = filtered.take(visibleCount).toList();
+    });
+  }
+
+  void loadMore() {
+    setState(() {
+      visibleCount += 10;
+      updateVisibleResults();
+    });
+  }
+
+  void onSearchChanged(String query) {
+    setState(() {
+      searchQuery = query;
+      visibleCount = 10;
+      updateVisibleResults();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    return Scaffold(
+      appBar: AppBar(backgroundColor: Colors.white),
+      backgroundColor: Colors.white,
+      body:
+          isLoading
+              ? Center(child: CircularProgressIndicator())
+              : Center(
+                child: Container(
+                  constraints: BoxConstraints(maxWidth: 1200),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "AGROMEDRUN 5K 2025 Results",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 48,
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      SizedBox(
+                        width: 320,
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: "Enter participant name",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onChanged: onSearchChanged,
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 16,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Place',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      'Name',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      'BIB',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      'Time',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      'Gender',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: visibleResults.length,
+                                itemBuilder: (context, index) {
+                                  final result = visibleResults[index];
+
+                                  final cp0 = result['cp0'];
+                                  final cp1 = result['cp1'];
+
+                                  final time =
+                                      (cp0 != null && cp1 != null)
+                                          ? _formatDuration(cp0, cp1)
+                                          : "N/A";
+
+                                  String genderEng =
+                                      (() {
+                                        final gender =
+                                            result['gender']
+                                                ?.toString()
+                                                .toLowerCase();
+                                        if (gender == 'perempuan') {
+                                          return 'Female';
+                                        } else if (gender == 'laki-laki') {
+                                          return 'Male';
+                                        } else {
+                                          return '';
+                                        }
+                                      })();
+
+                                  final isGrey = index % 2 == 0;
+                                  return Container(
+                                    color:
+                                        isGrey
+                                            ? Colors.grey[300]
+                                            : Colors.white,
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 16,
+                                      horizontal: 16,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(child: Text("-")),
+                                        Expanded(
+                                          child: MouseRegion(
+                                            onEnter:
+                                                (_) => setState(
+                                                  () => _hoveredIndex = index,
+                                                ),
+                                            onExit:
+                                                (_) => setState(
+                                                  () => _hoveredIndex = null,
+                                                ),
+                                            cursor: SystemMouseCursors.click,
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                // Navigator.push(
+                                                //   context,
+                                                //   MaterialPageRoute(
+                                                //     builder:
+                                                //         (context) =>
+                                                //             ParticipantDetailPage(
+                                                //               participant:
+                                                //                   result,
+                                                //             ),
+                                                //   ),
+                                                // );
+                                              },
+                                              child: Container(
+                                                padding: EdgeInsets.only(
+                                                  right: 16,
+                                                ),
+                                                child: Text(
+                                                  result['name'] ?? '',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    color:
+                                                        _hoveredIndex == index
+                                                            ? Colors.blue[800]
+                                                            : Colors.blue,
+                                                    decoration:
+                                                        _hoveredIndex == index
+                                                            ? TextDecoration
+                                                                .underline
+                                                            : TextDecoration
+                                                                .none,
+                                                    decorationColor:
+                                                        _hoveredIndex == index
+                                                            ? Colors.blue[800]
+                                                            : Colors.blue,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        Expanded(
+                                          child: Text(
+                                            result['bib']?.toString() ?? '',
+                                            style: TextStyle(fontSize: 16),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            time,
+                                            style: TextStyle(fontSize: 16),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            genderEng,
+                                            style: TextStyle(fontSize: 16),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      if (visibleResults.length <
+                          allResults.where((r) {
+                            return r['name'].toString().toLowerCase().contains(
+                              searchQuery.toLowerCase(),
+                            );
+                          }).length)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: ElevatedButton(
+                            onPressed: loadMore,
+                            child: const Text('Load More'),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+    );
+  }
+
+  String _formatDuration(dynamic start, dynamic end) {
+    try {
+      final format = DateFormat('dd-MM-yyyy HH:mm:ss');
+      final startTime = format.parse(start);
+      final endTime = format.parse(end);
+      final duration = endTime.difference(startTime);
+
+      final hours = duration.inHours.toString().padLeft(2, '0');
+      final minutes = duration.inMinutes
+          .remainder(60)
+          .toString()
+          .padLeft(2, '0');
+      final seconds = duration.inSeconds
+          .remainder(60)
+          .toString()
+          .padLeft(2, '0');
+
+      return '$hours:$minutes:$seconds';
+    } catch (e) {
+      return 'Invalid';
+    }
+  }
+}
+
+class ParticipantDetailPage extends StatelessWidget {
+  final Map<String, dynamic> participant;
+
+  const ParticipantDetailPage({super.key, required this.participant});
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        automaticallyImplyLeading: false,
+        backgroundColor: Color.fromRGBO(50, 168, 83, 1),
       ),
+      backgroundColor: Colors.grey[100],
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        child: Container(
+          constraints: BoxConstraints(maxWidth: 1200),
+          padding: EdgeInsets.all(16),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 200,
+                height: 200,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.5),
+                        spreadRadius: 1,
+                        blurRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: 100,
+                        child: Text("${participant["name"]}"),
+                      ),
+                      Container(
+                        color: Color.fromRGBO(50, 168, 83, 1),
+                        child: Text("${participant["bib"]}"),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(child: SizedBox()),
+              SizedBox(
+                width: 100,
+                height: 100,
+                child: Container(color: Colors.white),
+              ),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
