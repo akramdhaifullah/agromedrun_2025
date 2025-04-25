@@ -117,169 +117,405 @@ class _ResultPageState extends State<ResultPage> {
                           ),
                         ),
                         SizedBox(height: 24),
-                        Container(
-                          padding: EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              SizedBox(
-                                width: 70,
-                                child: Text(
-                                  "Place",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  "Name",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  "BIB Number",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  "Time",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  "Gender",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          itemCount: visibleResults.length,
-                          itemBuilder: (context, index) {
-                            final result = visibleResults[index];
-
-                            final cp0 = result['cp0'];
-                            final cp1 = result['cp1'];
-
-                            final time =
-                                (cp0 != null && cp1 != null)
-                                    ? _formatDuration(cp0, cp1)
-                                    : "N/A";
-
-                            String genderEng =
-                                (() {
-                                  final gender =
-                                      result['gender']
-                                          ?.toString()
-                                          .toLowerCase();
-                                  if (gender == 'perempuan') {
-                                    return 'Female';
-                                  } else if (gender == 'laki-laki') {
-                                    return 'Male';
-                                  } else {
-                                    return '';
-                                  }
-                                })();
-
-                            final isGrey = index % 2 == 0;
-                            return Container(
-                              color: isGrey ? Colors.grey[300] : Colors.white,
-                              padding: EdgeInsets.symmetric(
-                                vertical: 16,
-                                horizontal: 16,
-                              ),
-                              child: Row(
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            bool isWideScreen = constraints.maxWidth > 720;
+                            if (isWideScreen) {
+                              return Column(
                                 children: [
-                                  SizedBox(width: 70, child: Text("-")),
-                                  Expanded(
-                                    child: MouseRegion(
-                                      onEnter:
-                                          (_) => setState(
-                                            () => _hoveredIndex = index,
-                                          ),
-                                      onExit:
-                                          (_) => setState(
-                                            () => _hoveredIndex = null,
-                                          ),
-                                      cursor: SystemMouseCursors.click,
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          // Navigator.push(
-                                          //   context,
-                                          //   MaterialPageRoute(
-                                          //     builder:
-                                          //         (context) =>
-                                          //             ParticipantDetailPage(
-                                          //               participant:
-                                          //                   result,
-                                          //             ),
-                                          //   ),
-                                          // );
-                                        },
-                                        child: Container(
-                                          padding: EdgeInsets.only(right: 16),
+                                  Container(
+                                    padding: EdgeInsets.all(16),
+                                    child: Row(
+                                      children: [
+                                        SizedBox(
+                                          width: 70,
                                           child: Text(
-                                            result['name'] ?? '',
+                                            "Place",
                                             style: TextStyle(
                                               fontSize: 16,
-                                              color:
-                                                  _hoveredIndex == index
-                                                      ? Colors.blue[800]
-                                                      : Colors.blue,
-                                              decoration:
-                                                  _hoveredIndex == index
-                                                      ? TextDecoration.underline
-                                                      : TextDecoration.none,
-                                              decorationColor:
-                                                  _hoveredIndex == index
-                                                      ? Colors.blue[800]
-                                                      : Colors.blue,
+                                              fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                         ),
-                                      ),
+                                        Expanded(
+                                          child: Text(
+                                            "Name",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            "BIB Number",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            "Time",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            "Gender",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  Expanded(
-                                    child: Text(
-                                      result['bib']?.toString() ?? '',
-                                      style: TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      time,
-                                      style: TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      genderEng,
-                                      style: TextStyle(fontSize: 16),
-                                    ),
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemCount: visibleResults.length,
+                                    itemBuilder: (context, index) {
+                                      final result = visibleResults[index];
+
+                                      final cp0 = result['cp0'];
+                                      final cp1 = result['cp1'];
+
+                                      final time =
+                                          (cp0 != null && cp1 != null)
+                                              ? _formatDuration(cp0, cp1)
+                                              : "N/A";
+
+                                      String genderEng =
+                                          (() {
+                                            final gender =
+                                                result['gender']
+                                                    ?.toString()
+                                                    .toLowerCase();
+                                            if (gender == 'perempuan') {
+                                              return 'Female';
+                                            } else if (gender == 'laki-laki') {
+                                              return 'Male';
+                                            } else {
+                                              return '';
+                                            }
+                                          })();
+
+                                      final isGrey = index % 2 == 0;
+                                      return Column(
+                                        children: [
+                                          Container(
+                                            color:
+                                                isGrey
+                                                    ? Colors.grey[300]
+                                                    : Colors.white,
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: 16,
+                                              horizontal: 16,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                SizedBox(
+                                                  width: 70,
+                                                  child: Text("-"),
+                                                ),
+                                                Expanded(
+                                                  child: MouseRegion(
+                                                    onEnter:
+                                                        (_) => setState(
+                                                          () =>
+                                                              _hoveredIndex =
+                                                                  index,
+                                                        ),
+                                                    onExit:
+                                                        (_) => setState(
+                                                          () =>
+                                                              _hoveredIndex =
+                                                                  null,
+                                                        ),
+                                                    cursor:
+                                                        SystemMouseCursors
+                                                            .click,
+                                                    child: GestureDetector(
+                                                      onTap: () {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder:
+                                                                (
+                                                                  context,
+                                                                ) => ParticipantDetailPage(
+                                                                  participant:
+                                                                      result,
+                                                                ),
+                                                          ),
+                                                        );
+                                                      },
+                                                      child: Container(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                              right: 16,
+                                                            ),
+                                                        child: Text(
+                                                          result['name'] ?? '',
+                                                          style: TextStyle(
+                                                            fontSize: 16,
+                                                            color:
+                                                                _hoveredIndex ==
+                                                                        index
+                                                                    ? Colors
+                                                                        .blue[800]
+                                                                    : Colors
+                                                                        .blue,
+                                                            decoration:
+                                                                _hoveredIndex ==
+                                                                        index
+                                                                    ? TextDecoration
+                                                                        .underline
+                                                                    : TextDecoration
+                                                                        .none,
+                                                            decorationColor:
+                                                                _hoveredIndex ==
+                                                                        index
+                                                                    ? Colors
+                                                                        .blue[800]
+                                                                    : Colors
+                                                                        .blue,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Text(
+                                                    result['bib']?.toString() ??
+                                                        '',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Text(
+                                                    time,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Text(
+                                                    genderEng,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
                                   ),
                                 ],
-                              ),
-                            );
+                              );
+                            } else {
+                              return Column(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(16),
+                                    child: Row(
+                                      children: [
+                                        SizedBox(
+                                          width: 70,
+                                          child: Text(
+                                            "Place",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            "Name (BIB)",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            "Time",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            "Gender",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemCount: visibleResults.length,
+                                    itemBuilder: (context, index) {
+                                      final result = visibleResults[index];
+
+                                      final cp0 = result['cp0'];
+                                      final cp1 = result['cp1'];
+
+                                      final time =
+                                          (cp0 != null && cp1 != null)
+                                              ? _formatDuration(cp0, cp1)
+                                              : "N/A";
+
+                                      String genderEng =
+                                          (() {
+                                            final gender =
+                                                result['gender']
+                                                    ?.toString()
+                                                    .toLowerCase();
+                                            if (gender == 'perempuan') {
+                                              return 'Female';
+                                            } else if (gender == 'laki-laki') {
+                                              return 'Male';
+                                            } else {
+                                              return '';
+                                            }
+                                          })();
+
+                                      final isGrey = index % 2 == 0;
+                                      String? nameBib =
+                                          "${result['name']} (${result['bib']})";
+                                      return Column(
+                                        children: [
+                                          Container(
+                                            color:
+                                                isGrey
+                                                    ? Colors.grey[300]
+                                                    : Colors.white,
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: 16,
+                                              horizontal: 16,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                SizedBox(
+                                                  width: 70,
+                                                  child: Text("-"),
+                                                ),
+                                                Expanded(
+                                                  child: MouseRegion(
+                                                    onEnter:
+                                                        (_) => setState(
+                                                          () =>
+                                                              _hoveredIndex =
+                                                                  index,
+                                                        ),
+                                                    onExit:
+                                                        (_) => setState(
+                                                          () =>
+                                                              _hoveredIndex =
+                                                                  null,
+                                                        ),
+                                                    cursor:
+                                                        SystemMouseCursors
+                                                            .click,
+                                                    child: GestureDetector(
+                                                      onTap: () {
+                                                        // Navigator.push(
+                                                        //   context,
+                                                        //   MaterialPageRoute(
+                                                        //     builder:
+                                                        //         (context) =>
+                                                        //             ParticipantDetailPage(
+                                                        //               participant:
+                                                        //                   result,
+                                                        //             ),
+                                                        //   ),
+                                                        // );
+                                                      },
+                                                      child: Container(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                              right: 16,
+                                                            ),
+                                                        child: Text(
+                                                          nameBib,
+                                                          style: TextStyle(
+                                                            fontSize: 16,
+                                                            color:
+                                                                _hoveredIndex ==
+                                                                        index
+                                                                    ? Colors
+                                                                        .blue[800]
+                                                                    : Colors
+                                                                        .blue,
+                                                            decoration:
+                                                                _hoveredIndex ==
+                                                                        index
+                                                                    ? TextDecoration
+                                                                        .underline
+                                                                    : TextDecoration
+                                                                        .none,
+                                                            decorationColor:
+                                                                _hoveredIndex ==
+                                                                        index
+                                                                    ? Colors
+                                                                        .blue[800]
+                                                                    : Colors
+                                                                        .blue,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Text(
+                                                    time,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Text(
+                                                    genderEng,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ],
+                              );
+                            }
                           },
                         ),
                         SizedBox(height: 16),
