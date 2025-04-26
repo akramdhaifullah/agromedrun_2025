@@ -78,6 +78,17 @@ class _TableScreenState extends State<TableScreen> {
     });
   }
 
+  String _translateGender(String? gender) {
+    final genderLower = gender?.toString().toLowerCase();
+    if (genderLower == 'perempuan') {
+      return 'Female';
+    } else if (genderLower == 'laki-laki') {
+      return 'Male';
+    } else {
+      return '';
+    }
+  }
+
   String calculateTime(Map<String, dynamic> item) {
     final cp0 = item['cp0'] ?? '';
     final cp1 = item['cp1'] ?? '';
@@ -175,6 +186,7 @@ class _TableScreenState extends State<TableScreen> {
                                   ),
                                   isDense: true,
                                 ),
+                                onChanged: updateSearch,
                               ),
                             ),
                             SizedBox(height: 8),
@@ -213,7 +225,11 @@ class _TableScreenState extends State<TableScreen> {
                                                   Text(item['bib'] ?? ''),
                                                 ),
                                                 DataCell(
-                                                  Text(item['gender'] ?? ''),
+                                                  Text(
+                                                    _translateGender(
+                                                      item['gender'],
+                                                    ),
+                                                  ),
                                                 ),
                                                 DataCell(
                                                   Text(calculateTime(item)),
