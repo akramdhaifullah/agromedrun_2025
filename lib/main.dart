@@ -109,10 +109,6 @@ class _TableScreenState extends State<TableScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
     // Pagination
     final start = currentPage * rowsPerPage;
     final end =
@@ -122,92 +118,133 @@ class _TableScreenState extends State<TableScreen> {
     final pageItems = filteredData.sublist(start, end);
 
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Agromed Run 5K 2025 Results',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'Search by Name or Bib',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.search),
-              ),
-              onChanged: updateSearch,
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: SingleChildScrollView(
-                // Vertical Scroll
-                child: SingleChildScrollView(
-                  // Horizontal Scroll
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text('Name')),
-                      DataColumn(label: Text('Bib')),
-                      DataColumn(label: Text('Time')),
-                      DataColumn(label: Text('Action')),
-                    ],
-                    rows:
-                        pageItems.map((item) {
-                          return DataRow(
-                            cells: [
-                              DataCell(Text(item['name'] ?? '')),
-                              DataCell(Text(item['bib'] ?? '')),
-                              DataCell(Text(calculateTime(item))),
-                              DataCell(
-                                ElevatedButton(
-                                  onPressed: () {},
-                                  child: Text(item['bib'] ?? 'Button'),
+      appBar: AppBar(backgroundColor: Colors.white),
+      backgroundColor: Colors.white,
+      body:
+          loading
+              ? Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                child: Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8),
+                        constraints: BoxConstraints(maxWidth: 1200),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Agromed Run 2025 5K Results",
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                            SizedBox(
+                              width: 200,
+                              child: TextField(
+                                decoration: InputDecoration(
+                                  hintText: "Enter participant name",
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  isDense: true,
                                 ),
                               ),
-                            ],
-                          );
-                        }).toList(),
+                            ),
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                return SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      minWidth: constraints.maxWidth,
+                                    ),
+                                    child: DataTable(
+                                      columns: [
+                                        DataColumn(label: Text("Name")),
+                                        DataColumn(label: Text('Bib')),
+                                        DataColumn(label: Text('Time')),
+                                        DataColumn(label: Text('Action')),
+                                      ],
+                                      rows:
+                                          pageItems.map((item) {
+                                            return DataRow(
+                                              cells: [
+                                                DataCell(
+                                                  Text(item['name'] ?? ''),
+                                                ),
+                                                DataCell(
+                                                  Text(item['bib'] ?? ''),
+                                                ),
+                                                DataCell(
+                                                  Text(calculateTime(item)),
+                                                ),
+                                                DataCell(
+                                                  ElevatedButton(
+                                                    onPressed: () {},
+                                                    child: Text(
+                                                      item['bib'] ?? 'Button',
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          }).toList(),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                IconButton(
+                                  onPressed:
+                                      currentPage > 0
+                                          ? () {
+                                            setState(() {
+                                              currentPage--;
+                                            });
+                                          }
+                                          : null,
+                                  icon: const Icon(Icons.chevron_left),
+                                ),
+                                Text(
+                                  'Page ${currentPage + 1} of ${((filteredData.length - 1) / rowsPerPage).ceil() + 1}',
+                                ),
+                                IconButton(
+                                  onPressed:
+                                      (start + rowsPerPage) <
+                                              filteredData.length
+                                          ? () {
+                                            setState(() {
+                                              currentPage++;
+                                            });
+                                          }
+                                          : null,
+                                  icon: const Icon(Icons.chevron_right),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(16),
+                        color: Colors.grey[200],
+                        child: Text(
+                          '© 2025 Lari Terus',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 14, color: Colors.black),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  onPressed:
-                      currentPage > 0
-                          ? () {
-                            setState(() {
-                              currentPage--;
-                            });
-                          }
-                          : null,
-                  icon: const Icon(Icons.chevron_left),
-                ),
-                Text(
-                  'Page ${currentPage + 1} of ${((filteredData.length - 1) / rowsPerPage).ceil() + 1}',
-                ),
-                IconButton(
-                  onPressed:
-                      (start + rowsPerPage) < filteredData.length
-                          ? () {
-                            setState(() {
-                              currentPage++;
-                            });
-                          }
-                          : null,
-                  icon: const Icon(Icons.chevron_right),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
