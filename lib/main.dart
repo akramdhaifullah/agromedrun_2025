@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,506 +18,194 @@ class RaceResultApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: ResultPage());
+    return MaterialApp(
+      title: 'Agromed Run 5K Results',
+      home: const TableScreen(),
+    );
   }
 }
 
-class ResultPage extends StatefulWidget {
-  const ResultPage({super.key});
+class TableScreen extends StatefulWidget {
+  const TableScreen({super.key});
 
   @override
-  State<ResultPage> createState() => _ResultPageState();
+  State<TableScreen> createState() => _TableScreenState();
 }
 
-class _ResultPageState extends State<ResultPage> {
-  List<Map<String, dynamic>> allResults = [];
-  List<Map<String, dynamic>> visibleResults = [];
+class _TableScreenState extends State<TableScreen> {
+  final SupabaseClient supabase = Supabase.instance.client;
+  List<dynamic> allData = [];
+  List<dynamic> filteredData = [];
+  bool loading = true;
   String searchQuery = '';
-  bool isLoading = true;
-  int? _hoveredIndex;
-  int currentPage = 1;
-  int resultsPerPage = 19;
-  final ScrollController _scrollController = ScrollController();
+
+  int rowsPerPage = 100;
+  int currentPage = 0;
 
   @override
   void initState() {
     super.initState();
-    fetchResults();
+    fetchTableData();
   }
 
-  Future<void> fetchResults() async {
-    final response =
-        await Supabase.instance.client.from('rts_agromed').select();
+  Future<void> fetchTableData() async {
+    final response = await supabase.from('rts_agromed').select();
 
+    if (response.isNotEmpty) {
+      setState(() {
+        allData = response.toList();
+        filteredData = allData;
+        loading = false;
+      });
+    } else {
+      setState(() {
+        loading = false;
+      });
+    }
+  }
+
+  void updateSearch(String query) {
     setState(() {
-      allResults = List<Map<String, dynamic>>.from(response);
-      updateVisibleResults();
-      isLoading = false;
+      searchQuery = query.toLowerCase();
+      filteredData =
+          allData.where((item) {
+            final name = (item['name'] ?? '').toString().toLowerCase();
+            final bib = (item['bib'] ?? '').toString().toLowerCase();
+            return name.contains(searchQuery) || bib.contains(searchQuery);
+          }).toList();
+      currentPage = 0; // Reset to first page after search
     });
   }
 
-  void updateVisibleResults() {
-    final filtered =
-        allResults.where((result) {
-          return result['name'].toString().toLowerCase().contains(
-            searchQuery.toLowerCase(),
-          );
-        }).toList();
+  String calculateTime(Map<String, dynamic> item) {
+    final cp0 = item['cp0'] ?? '';
+    final cp1 = item['cp1'] ?? '';
+    final isDnf = item['is_dnf'] ?? false;
 
-    final start = (currentPage - 1) * resultsPerPage;
-    final end = (start + resultsPerPage).clamp(0, filtered.length);
-
-    setState(() {
-      visibleResults = filtered.sublist(start, end);
-    });
-  }
-
-  void onSearchChanged(String query) {
-    setState(() {
-      searchQuery = query;
-      currentPage = 1;
-      updateVisibleResults();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body:
-          isLoading
-              ? Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                controller: _scrollController,
-                child: Center(
-                  child: Container(
-                    constraints: BoxConstraints(maxWidth: 1200),
-                    margin: EdgeInsets.symmetric(vertical: 24, horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "AGROMEDRUN 5K 2025 Results",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 36,
-                          ),
-                        ),
-                        SizedBox(height: 16),
-                        SizedBox(
-                          width: 320,
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: "Enter participant name",
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            onChanged: onSearchChanged,
-                          ),
-                        ),
-                        SizedBox(height: 24),
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            bool isWideScreen = constraints.maxWidth > 720;
-                            return Column(
-                              children: [
-                                _buildTableHeader(isWideScreen),
-                                _buildParticipantsList(isWideScreen),
-                              ],
-                            );
-                          },
-                        ),
-                        SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: _buildPaginationButtons(),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-    );
-  }
-
-  String _formatDuration(dynamic start, dynamic end, dynamic dnfTag) {
-    if (dnfTag) {
-      return "DNF";
+    if (cp0 == '' || cp0 == null) {
+      return 'Did not start';
+    } else if (isDnf == true) {
+      return 'Did not finish';
+    } else if (cp1 == '' || cp1 == null) {
+      return '';
     } else {
       try {
-        final format = DateFormat('dd-MM-yyyy HH:mm:ss');
-        final startTime = format.parse(start);
-        final endTime = format.parse(end);
-        final duration = endTime.difference(startTime);
+        final format = DateFormat('yyyy-MM-dd HH:mm:ss');
+        final start = format.parse(cp0);
+        final end = format.parse(cp1);
+        final difference = end.difference(start);
 
-        final hours = duration.inHours.toString().padLeft(2, '0');
-        final minutes = duration.inMinutes
-            .remainder(60)
-            .toString()
-            .padLeft(2, '0');
-        final seconds = duration.inSeconds
-            .remainder(60)
-            .toString()
-            .padLeft(2, '0');
+        String twoDigits(int n) => n.toString().padLeft(2, '0');
+        final hours = twoDigits(difference.inHours);
+        final minutes = twoDigits(difference.inMinutes.remainder(60));
+        final seconds = twoDigits(difference.inSeconds.remainder(60));
 
         return '$hours:$minutes:$seconds';
       } catch (e) {
-        return 'Invalid';
+        return 'Invalid time';
       }
     }
   }
-
-  // Helper method to translate gender
-  String _translateGender(String? gender) {
-    final genderLower = gender?.toString().toLowerCase();
-    if (genderLower == 'perempuan') {
-      return 'Female';
-    } else if (genderLower == 'laki-laki') {
-      return 'Male';
-    } else {
-      return '';
-    }
-  }
-
-  Widget _buildParticipantNameCell(
-    BuildContext context,
-    Map result,
-    int index,
-    bool isWideScreen,
-  ) {
-    final String displayText = result['name'] ?? '';
-    final String displayTextWithBib = "${result['name']} (${result['bib']})";
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hoveredIndex = index),
-      onExit: (_) => setState(() => _hoveredIndex = null),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () {
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder:
-          //         (context) => ParticipantDetailPage(
-          //           participant: result.cast<String, dynamic>(),
-          //         ),
-          //   ),
-          // );
-        },
-        child: Container(
-          padding: EdgeInsets.only(right: 16),
-          child: Text(
-            isWideScreen ? displayText : displayTextWithBib,
-            style: TextStyle(
-              fontSize: 16,
-              color: _hoveredIndex == index ? Colors.blue[800] : Colors.blue,
-              decoration:
-                  _hoveredIndex == index
-                      ? TextDecoration.underline
-                      : TextDecoration.none,
-              decorationColor:
-                  _hoveredIndex == index ? Colors.blue[800] : Colors.blue,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // List of participants
-  Widget _buildParticipantsList(bool isWideScreen) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      itemCount: visibleResults.length,
-      itemBuilder: (context, index) {
-        final result = visibleResults[index];
-        final cp0 = result['cp0'];
-        final cp1 = result['cp1'];
-        final dnfTag = result['is_dnf'];
-        final time =
-            (cp0 != null && cp1 != null)
-                ? _formatDuration(cp0, cp1, dnfTag)
-                : "N/A";
-
-        String genderEng = _translateGender(result['gender']);
-        final isGrey = index % 2 == 0;
-
-        return Column(
-          children: [
-            Container(
-              color: isGrey ? Colors.grey[300] : Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-              child: Row(
-                children: [
-                  SizedBox(width: 70, child: Text("-")),
-                  Expanded(
-                    child: _buildParticipantNameCell(
-                      context,
-                      result,
-                      index,
-                      isWideScreen,
-                    ),
-                  ),
-                  if (isWideScreen)
-                    Expanded(
-                      child: Text(
-                        result['bib']?.toString() ?? '',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  Expanded(child: Text(time, style: TextStyle(fontSize: 16))),
-                  Expanded(
-                    child: Text(genderEng, style: TextStyle(fontSize: 16)),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildTableHeader(bool isWideScreen) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 70,
-            child: Text(
-              "Place",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              isWideScreen ? "Name" : "Name (BIB)",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-          if (isWideScreen)
-            Expanded(
-              child: Text(
-                "BIB Number",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-          Expanded(
-            child: Text(
-              "Time",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              "Gender",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildArrowButton(String label, bool enabled, VoidCallback onTap) {
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(4),
-          color: enabled ? Colors.grey[300] : Colors.grey[200],
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: enabled ? Colors.black87 : Colors.grey,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPageNumber(int page) {
-    final isSelected = page == currentPage;
-
-    return InkWell(
-      onTap: () {
-        setState(() {
-          currentPage = page;
-          updateVisibleResults();
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-        });
-      },
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 2),
-        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.grey[800] : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.grey),
-        ),
-        child: Text(
-          '$page',
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  int totalPages() {
-    final filtered =
-        allResults.where((r) {
-          return r['name'].toString().toLowerCase().contains(
-            searchQuery.toLowerCase(),
-          );
-        }).toList();
-
-    return (filtered.length / resultsPerPage).ceil();
-  }
-
-  List<Widget> _buildPaginationButtons() {
-    int totalPages = this.totalPages();
-    List<Widget> buttons = [];
-
-    void addPage(int page) {
-      buttons.add(_buildPageNumber(page));
-    }
-
-    void addEllipsis() {
-      buttons.add(
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4),
-          child: Text('...', style: TextStyle(color: Colors.grey)),
-        ),
-      );
-    }
-
-    // Previous arrow
-    buttons.add(
-      _buildArrowButton("<", currentPage > 1, () {
-        setState(() {
-          currentPage--;
-          updateVisibleResults();
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-        });
-      }),
-    );
-
-    if (totalPages <= 7) {
-      for (int i = 1; i <= totalPages; i++) {
-        addPage(i);
-      }
-    } else if (currentPage <= 4) {
-      // Show pages 1-4, ..., last 2
-      for (int i = 1; i <= 4; i++) {
-        addPage(i);
-      }
-      addEllipsis();
-      addPage(totalPages - 1);
-      addPage(totalPages);
-    } else if (currentPage >= totalPages - 3) {
-      // Show 1, 2, ..., last 4 pages
-      addPage(1);
-      addPage(2);
-      addEllipsis();
-      for (int i = totalPages - 3; i <= totalPages; i++) {
-        addPage(i);
-      }
-    } else {
-      // Show 1, 2, ..., currentPage, ..., last 2
-      addPage(1);
-      addPage(2);
-      addEllipsis();
-      addPage(currentPage);
-      addEllipsis();
-      addPage(totalPages - 1);
-      addPage(totalPages);
-    }
-
-    // Next arrow
-    buttons.add(
-      _buildArrowButton(">", currentPage < totalPages, () {
-        setState(() {
-          currentPage++;
-          updateVisibleResults();
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-        });
-      }),
-    );
-
-    return buttons;
-  }
-}
-
-class ParticipantDetailPage extends StatelessWidget {
-  final Map<String, dynamic> participant;
-
-  const ParticipantDetailPage({super.key, required this.participant});
 
   @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    // Pagination
+    final start = currentPage * rowsPerPage;
+    final end =
+        (start + rowsPerPage) > filteredData.length
+            ? filteredData.length
+            : (start + rowsPerPage);
+    final pageItems = filteredData.sublist(start, end);
+
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Color.fromRGBO(50, 168, 83, 1),
-      ),
-      backgroundColor: Colors.grey[100],
-      body: Center(
-        child: Container(
-          constraints: BoxConstraints(maxWidth: 1200),
-          padding: EdgeInsets.all(16),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 200,
-                height: 200,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withValues(),
-                        spreadRadius: 1,
-                        blurRadius: 2,
-                      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Agromed Run 5K 2025 Results',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Search by Name or Bib',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: updateSearch,
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: SingleChildScrollView(
+                // Vertical Scroll
+                child: SingleChildScrollView(
+                  // Horizontal Scroll
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    columns: const [
+                      DataColumn(label: Text('Name')),
+                      DataColumn(label: Text('Bib')),
+                      DataColumn(label: Text('Time')),
+                      DataColumn(label: Text('Action')),
                     ],
-                  ),
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        height: 100,
-                        child: Text("${participant["name"]}"),
-                      ),
-                      Container(
-                        color: Color.fromRGBO(50, 168, 83, 1),
-                        child: Text("${participant["bib"]}"),
-                      ),
-                    ],
+                    rows:
+                        pageItems.map((item) {
+                          return DataRow(
+                            cells: [
+                              DataCell(Text(item['name'] ?? '')),
+                              DataCell(Text(item['bib'] ?? '')),
+                              DataCell(Text(calculateTime(item))),
+                              DataCell(
+                                ElevatedButton(
+                                  onPressed: () {},
+                                  child: Text(item['bib'] ?? 'Button'),
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
                   ),
                 ),
               ),
-              Expanded(child: SizedBox()),
-              SizedBox(
-                width: 100,
-                height: 100,
-                child: Container(color: Colors.white),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed:
+                      currentPage > 0
+                          ? () {
+                            setState(() {
+                              currentPage--;
+                            });
+                          }
+                          : null,
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                Text(
+                  'Page ${currentPage + 1} of ${((filteredData.length - 1) / rowsPerPage).ceil() + 1}',
+                ),
+                IconButton(
+                  onPressed:
+                      (start + rowsPerPage) < filteredData.length
+                          ? () {
+                            setState(() {
+                              currentPage++;
+                            });
+                          }
+                          : null,
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
