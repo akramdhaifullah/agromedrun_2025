@@ -254,21 +254,22 @@ class _TableScreenState extends State<TableScreen> {
                                                   Text(calculateTime(item)),
                                                 ),
                                                 DataCell(
-                                                  item['is_dnf'] == true ||
-                                                          (item['cp0'] == '' &&
-                                                              item['cp1'] == '')
-                                                      ? SizedBox.shrink()
-                                                      : ElevatedButton(
-                                                        onPressed: () {
-                                                          _createCertificate(
-                                                            item['name'],
-                                                            calculateTime(item),
-                                                          );
-                                                        },
-                                                        child: Text(
-                                                          'e-certificate',
-                                                        ),
-                                                      ),
+                                                  // item['is_dnf'] == true ||
+                                                  //         (item['cp0'] == '' &&
+                                                  //             item['cp1'] == '')
+                                                  //     ? SizedBox.shrink()
+                                                  //     : ElevatedButton(
+                                                  //       onPressed: () {
+                                                  //         // _createCertificate(
+                                                  //         //   item['name'],
+                                                  //         //   calculateTime(item),
+                                                  //         // );
+                                                  //       },
+                                                  //       child: Text(
+                                                  //         'e-certificate',
+                                                  //       ),
+                                                  //     ),
+                                                  Spacer(),
                                                 ),
                                               ],
                                             );
