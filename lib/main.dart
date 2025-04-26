@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-import 'dart:html' as html; // For download
+///Dart imports
+import 'dart:async';
+import 'dart:convert';
+import 'package:web/web.dart' as web;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -158,7 +161,6 @@ class _TableScreenState extends State<TableScreen> {
     final pageItems = filteredData.sublist(start, end);
 
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.white),
       backgroundColor: Colors.white,
       body:
           loading
@@ -253,21 +255,9 @@ class _TableScreenState extends State<TableScreen> {
                                                                   '')) {
                                                         null;
                                                       } else {
-                                                        Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder:
-                                                                (
-                                                                  context,
-                                                                ) => CertificatePreview(
-                                                                  participantName:
-                                                                      item['name'],
-                                                                  time:
-                                                                      calculateTime(
-                                                                        item,
-                                                                      ),
-                                                                ),
-                                                          ),
+                                                        _createCertificate(
+                                                          item['name'],
+                                                          calculateTime(item),
                                                         );
                                                       }
                                                     },
@@ -335,83 +325,73 @@ class _TableScreenState extends State<TableScreen> {
               ),
     );
   }
-}
 
-class CertificatePreview extends StatefulWidget {
-  final String participantName;
-  final String time;
-
-  const CertificatePreview({
-    super.key,
-    required this.participantName,
-    required this.time,
-  });
-
-  @override
-  State<CertificatePreview> createState() => _CertificatePreviewState();
-}
-
-class _CertificatePreviewState extends State<CertificatePreview> {
-  final GlobalKey _globalKey = GlobalKey();
-
-  Future<void> _downloadCertificate() async {
-    try {
-      RenderRepaintBoundary boundary =
-          _globalKey.currentContext!.findRenderObject()
-              as RenderRepaintBoundary;
-      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      ByteData? byteData = await image.toByteData(
-        format: ui.ImageByteFormat.png,
-      );
-      Uint8List pngBytes = byteData!.buffer.asUint8List();
-
-      final blob = html.Blob([pngBytes]);
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      html.Url.revokeObjectUrl(url);
-    } catch (e) {
-      print('Error downloading certificate: $e');
-    }
+  Future<void> _createCertificate(String name, String time) async {
+    //Create a PDF document.
+    final PdfDocument document = PdfDocument();
+    document.pageSettings.orientation = PdfPageOrientation.landscape;
+    document.pageSettings.margins.all = 0;
+    //Add page to the PDF
+    final PdfPage page = document.pages.add();
+    //Get the page size
+    final Size pageSize = page.getClientSize();
+    //Draw image
+    page.graphics.drawImage(
+      PdfBitmap(await _readImageData('certificate.png')),
+      Rect.fromLTWH(0, 0, pageSize.width, pageSize.height),
+    );
+    //Create font
+    final PdfFont nameFont = PdfStandardFont(PdfFontFamily.helvetica, 22);
+    final PdfFont controlFont = PdfStandardFont(PdfFontFamily.helvetica, 19);
+    // final PdfFont dateFont = PdfStandardFont(PdfFontFamily.helvetica, 16);
+    double x = _calculateXPosition(name, nameFont, pageSize.width);
+    page.graphics.drawString(
+      name,
+      nameFont,
+      bounds: Rect.fromLTWH(x, 253, 0, 0),
+      brush: PdfSolidBrush(PdfColor(20, 58, 86)),
+    );
+    x = _calculateXPosition(time, controlFont, pageSize.width);
+    page.graphics.drawString(
+      time,
+      controlFont,
+      bounds: Rect.fromLTWH(x, 340, 0, 0),
+      brush: PdfSolidBrush(PdfColor(20, 58, 86)),
+    );
+    //Save and launch the document
+    final List<int> bytes = await document.save();
+    //Dispose the document.
+    document.dispose();
+    //Save and launch file.
+    await FileSaveHelper.saveAndLaunchFile(bytes, 'Certificate.pdf');
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text('Certificate Preview'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.download),
-            onPressed: _downloadCertificate,
-          ),
-        ],
-      ),
-      body: Center(
-        child: RepaintBoundary(
-          key: _globalKey,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Image.asset('assets/images/certificate.png', fit: BoxFit.contain),
-              Positioned(
-                bottom: 325,
-                child: Text(
-                  widget.participantName,
-                  style: TextStyle(
-                    fontSize: widget.participantName.length > 25 ? 60 : 80,
-                    // fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 115,
-                child: Text(widget.time, style: TextStyle(fontSize: 48)),
-              ),
-            ],
-          ),
-        ),
-      ),
+  double _calculateXPosition(String text, PdfFont font, double pageWidth) {
+    final Size textSize = font.measureString(
+      text,
+      layoutArea: Size(pageWidth, 0),
     );
+    return (pageWidth - textSize.width) / 2;
+  }
+
+  Future<List<int>> _readImageData(String name) async {
+    final ByteData data = await rootBundle.load("assets/images/$name");
+    return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+  }
+}
+
+// ignore: avoid_classes_with_only_static_members
+///To save the pdf file in the device
+class FileSaveHelper {
+  ///To save the pdf file in the device
+  static Future<void> saveAndLaunchFile(
+    List<int> bytes,
+    String fileName,
+  ) async {
+    web.HTMLAnchorElement()
+      ..href =
+          'data:application/octet-stream;charset=utf-16le;base64,${base64.encode(bytes)}'
+      ..setAttribute('download', fileName)
+      ..click();
   }
 }
