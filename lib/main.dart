@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'dart:html' as html; // For download
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -332,7 +337,7 @@ class _TableScreenState extends State<TableScreen> {
   }
 }
 
-class CertificatePreview extends StatelessWidget {
+class CertificatePreview extends StatefulWidget {
   final String participantName;
   final String time;
 
@@ -343,31 +348,68 @@ class CertificatePreview extends StatelessWidget {
   });
 
   @override
+  State<CertificatePreview> createState() => _CertificatePreviewState();
+}
+
+class _CertificatePreviewState extends State<CertificatePreview> {
+  final GlobalKey _globalKey = GlobalKey();
+
+  Future<void> _downloadCertificate() async {
+    try {
+      RenderRepaintBoundary boundary =
+          _globalKey.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
+      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+      Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+      final blob = html.Blob([pngBytes]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      html.Url.revokeObjectUrl(url);
+    } catch (e) {
+      print('Error downloading certificate: $e');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text('Certificate Preview'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.download),
+            onPressed: _downloadCertificate,
+          ),
+        ],
+      ),
       body: Center(
-        child: Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            Image.asset(
-              'assets/images/certificate.png', // Your certificate image
-              fit: BoxFit.contain,
-            ),
-            Positioned(
-              bottom: 350, // Adjust this to where you want the name to appear
-              child: Text(
-                participantName,
-                style: TextStyle(
-                  fontSize: participantName.length > 25 ? 60 : 80,
+        child: RepaintBoundary(
+          key: _globalKey,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Image.asset('assets/images/certificate.png', fit: BoxFit.contain),
+              Positioned(
+                bottom: 325,
+                child: Text(
+                  widget.participantName,
+                  style: TextStyle(
+                    fontSize: widget.participantName.length > 25 ? 60 : 80,
+                    // fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
               ),
-            ),
-            Positioned(
-              bottom: 120,
-              child: Text(time, style: TextStyle(fontSize: 48)),
-            ),
-          ],
+              Positioned(
+                bottom: 115,
+                child: Text(widget.time, style: TextStyle(fontSize: 48)),
+              ),
+            ],
+          ),
         ),
       ),
     );
