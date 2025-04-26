@@ -222,7 +222,15 @@ class _TableScreenState extends State<TableScreen> {
                                               ),
                                         ),
                                         DataColumn(label: Text("Gender")),
-                                        DataColumn(label: Text('Time')),
+                                        DataColumn(
+                                          label: Text('Time'),
+                                          onSort:
+                                              (columnIndex, ascending) => _sort(
+                                                (d) => calculateTime(d),
+                                                columnIndex,
+                                                ascending,
+                                              ),
+                                        ),
                                         DataColumn(label: Text('')),
                                       ],
                                       rows:
@@ -246,25 +254,21 @@ class _TableScreenState extends State<TableScreen> {
                                                   Text(calculateTime(item)),
                                                 ),
                                                 DataCell(
-                                                  ElevatedButton(
-                                                    onPressed: () {
-                                                      if (item['is_dnf'] ==
-                                                              true ||
+                                                  item['is_dnf'] == true ||
                                                           (item['cp0'] == '' &&
-                                                              item['cp1'] ==
-                                                                  '')) {
-                                                        null;
-                                                      } else {
-                                                        _createCertificate(
-                                                          item['name'],
-                                                          calculateTime(item),
-                                                        );
-                                                      }
-                                                    },
-                                                    child: Text(
-                                                      'e-certificate',
-                                                    ),
-                                                  ),
+                                                              item['cp1'] == '')
+                                                      ? SizedBox.shrink()
+                                                      : ElevatedButton(
+                                                        onPressed: () {
+                                                          _createCertificate(
+                                                            item['name'],
+                                                            calculateTime(item),
+                                                          );
+                                                        },
+                                                        child: Text(
+                                                          'e-certificate',
+                                                        ),
+                                                      ),
                                                 ),
                                               ],
                                             );
