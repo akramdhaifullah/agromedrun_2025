@@ -212,7 +212,7 @@ class _TableScreenState extends State<TableScreen> {
                                         ),
                                         DataColumn(label: Text("Gender")),
                                         DataColumn(label: Text('Time')),
-                                        DataColumn(label: Text('Action')),
+                                        DataColumn(label: Text('Certificate')),
                                       ],
                                       rows:
                                           pageItems.map((item) {
@@ -236,7 +236,32 @@ class _TableScreenState extends State<TableScreen> {
                                                 ),
                                                 DataCell(
                                                   ElevatedButton(
-                                                    onPressed: () {},
+                                                    onPressed: () {
+                                                      if (item['is_dnf'] ==
+                                                              true ||
+                                                          (item['cp0'] == '' &&
+                                                              item['cp1'] ==
+                                                                  '')) {
+                                                        null;
+                                                      } else {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder:
+                                                                (
+                                                                  context,
+                                                                ) => CertificatePreview(
+                                                                  participantName:
+                                                                      item['name'],
+                                                                  time:
+                                                                      calculateTime(
+                                                                        item,
+                                                                      ),
+                                                                ),
+                                                          ),
+                                                        );
+                                                      }
+                                                    },
                                                     child: Text(
                                                       item['bib'] ?? 'Button',
                                                     ),
@@ -298,6 +323,48 @@ class _TableScreenState extends State<TableScreen> {
                   ),
                 ),
               ),
+    );
+  }
+}
+
+class CertificatePreview extends StatelessWidget {
+  final String participantName;
+  final String time;
+
+  const CertificatePreview({
+    super.key,
+    required this.participantName,
+    required this.time,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            Image.asset(
+              'images/certificate.png', // Your certificate image
+              fit: BoxFit.contain,
+            ),
+            Positioned(
+              bottom: 350, // Adjust this to where you want the name to appear
+              child: Text(
+                participantName,
+                style: TextStyle(
+                  fontSize: participantName.length > 25 ? 60 : 80,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 120,
+              child: Text(time, style: TextStyle(fontSize: 48)),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
