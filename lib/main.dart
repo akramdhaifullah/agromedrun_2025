@@ -38,9 +38,10 @@ class _TableScreenState extends State<TableScreen> {
   List<dynamic> filteredData = [];
   bool loading = true;
   String searchQuery = '';
-
   int rowsPerPage = 100;
   int currentPage = 0;
+  int? _sortColumnIndex;
+  bool _sortAscending = true;
 
   @override
   void initState() {
@@ -107,6 +108,29 @@ class _TableScreenState extends State<TableScreen> {
     }
   }
 
+  void _sort<T>(
+    Comparable<T> Function(Map<String, dynamic> d) getField,
+    int columnIndex,
+    bool ascending,
+  ) {
+    setState(() {
+      if (_sortColumnIndex == columnIndex) {
+        _sortAscending = !_sortAscending; // 🔥 Toggle ascending if same column
+      } else {
+        _sortAscending = true; // 🔥 New column always start with ascending
+      }
+      _sortColumnIndex = columnIndex;
+
+      allData.sort((a, b) {
+        final aValue = getField(a);
+        final bValue = getField(b);
+        return _sortAscending
+            ? Comparable.compare(aValue, bValue)
+            : Comparable.compare(bValue, aValue);
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // Pagination
@@ -142,7 +166,7 @@ class _TableScreenState extends State<TableScreen> {
                             ),
                             SizedBox(height: 16),
                             SizedBox(
-                              width: 200,
+                              width: 250,
                               child: TextField(
                                 decoration: InputDecoration(
                                   hintText: "Enter participant name",
@@ -153,6 +177,7 @@ class _TableScreenState extends State<TableScreen> {
                                 ),
                               ),
                             ),
+                            SizedBox(height: 8),
                             LayoutBuilder(
                               builder: (context, constraints) {
                                 return SingleChildScrollView(
@@ -164,7 +189,16 @@ class _TableScreenState extends State<TableScreen> {
                                     child: DataTable(
                                       columns: [
                                         DataColumn(label: Text("Name")),
-                                        DataColumn(label: Text('Bib')),
+                                        DataColumn(
+                                          label: Text('BIB'),
+                                          onSort:
+                                              (columnIndex, ascending) => _sort(
+                                                (d) => d['bib'] ?? '',
+                                                columnIndex,
+                                                ascending,
+                                              ),
+                                        ),
+                                        DataColumn(label: Text("Gender")),
                                         DataColumn(label: Text('Time')),
                                         DataColumn(label: Text('Action')),
                                       ],
@@ -177,6 +211,9 @@ class _TableScreenState extends State<TableScreen> {
                                                 ),
                                                 DataCell(
                                                   Text(item['bib'] ?? ''),
+                                                ),
+                                                DataCell(
+                                                  Text(item['gender'] ?? ''),
                                                 ),
                                                 DataCell(
                                                   Text(calculateTime(item)),
