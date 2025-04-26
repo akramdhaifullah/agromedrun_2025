@@ -189,7 +189,7 @@ class _TableScreenState extends State<TableScreen> {
                                 onChanged: updateSearch,
                               ),
                             ),
-                            SizedBox(height: 8),
+                            SizedBox(height: 16),
                             LayoutBuilder(
                               builder: (context, constraints) {
                                 return SingleChildScrollView(
@@ -199,6 +199,10 @@ class _TableScreenState extends State<TableScreen> {
                                       minWidth: constraints.maxWidth,
                                     ),
                                     child: DataTable(
+                                      border: TableBorder.all(
+                                        color: Colors.grey,
+                                        width: 1,
+                                      ),
                                       columns: [
                                         DataColumn(label: Text("Name")),
                                         DataColumn(
@@ -275,6 +279,7 @@ class _TableScreenState extends State<TableScreen> {
                                 );
                               },
                             ),
+                            SizedBox(height: 8),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -346,7 +351,7 @@ class CertificatePreview extends StatelessWidget {
           alignment: Alignment.bottomCenter,
           children: [
             Image.asset(
-              'images/certificate.png', // Your certificate image
+              'assets/images/certificate.png', // Your certificate image
               fit: BoxFit.contain,
             ),
             Positioned(
