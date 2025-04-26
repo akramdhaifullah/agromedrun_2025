@@ -223,7 +223,7 @@ class _TableScreenState extends State<TableScreen> {
                                         ),
                                         DataColumn(label: Text("Gender")),
                                         DataColumn(label: Text('Time')),
-                                        DataColumn(label: Text('Certificate')),
+                                        DataColumn(label: Text('')),
                                       ],
                                       rows:
                                           pageItems.map((item) {
@@ -262,7 +262,7 @@ class _TableScreenState extends State<TableScreen> {
                                                       }
                                                     },
                                                     child: Text(
-                                                      item['bib'] ?? 'Button',
+                                                      'e-certificate',
                                                     ),
                                                   ),
                                                 ),
