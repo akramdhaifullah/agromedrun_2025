@@ -99,30 +99,39 @@ class _TableScreenState extends State<TableScreen> {
   String calculateTime(Map<String, dynamic> item) {
     final cp0 = item['cp0'] ?? '';
     final cp1 = item['cp1'] ?? '';
+    String output = "";
+
+    try {
+      final format = DateFormat('yyyy-MM-dd HH:mm:ss');
+      final start = format.parse(cp0);
+      final end = format.parse(cp1);
+      final difference = end.difference(start);
+
+      String twoDigits(int n) => n.toString().padLeft(2, '0');
+      final hours = twoDigits(difference.inHours);
+      final minutes = twoDigits(difference.inMinutes.remainder(60));
+      final seconds = twoDigits(difference.inSeconds.remainder(60));
+
+      output = '$hours:$minutes:$seconds';
+    } catch (e) {
+      output = 'Invalid time';
+    }
+    if (cp1 == "") {
+      output = "Did not finish";
+    }
+    if (cp0 == "") {
+      output = "Did not start";
+    }
+    return output;
+  }
+
+  bool showCertificate(Map<String, dynamic> item) {
     final isDnf = item['is_dnf'] ?? false;
-
-    if (cp0 == '' || cp0 == null) {
-      return 'Did not start';
-    } else if (isDnf == true) {
-      return 'Did not finish';
-    } else if (cp1 == '' || cp1 == null) {
-      return '';
+    final cp1 = item['cp1'] ?? '';
+    if (isDnf || cp1 == "") {
+      return false;
     } else {
-      try {
-        final format = DateFormat('yyyy-MM-dd HH:mm:ss');
-        final start = format.parse(cp0);
-        final end = format.parse(cp1);
-        final difference = end.difference(start);
-
-        String twoDigits(int n) => n.toString().padLeft(2, '0');
-        final hours = twoDigits(difference.inHours);
-        final minutes = twoDigits(difference.inMinutes.remainder(60));
-        final seconds = twoDigits(difference.inSeconds.remainder(60));
-
-        return '$hours:$minutes:$seconds';
-      } catch (e) {
-        return 'Invalid time';
-      }
+      return true;
     }
   }
 
@@ -253,40 +262,37 @@ class _TableScreenState extends State<TableScreen> {
                                                   Text(calculateTime(item)),
                                                 ),
                                                 DataCell(
-                                                  // item['is_dnf'] == true ||
-                                                  //         (item['cp0'] == '' &&
-                                                  //             item['cp1'] == '')
-                                                  //     ? SizedBox.shrink()
-                                                  //     : ElevatedButton(
-                                                  //       onPressed: () async {
-                                                  //         showDialog(
-                                                  //           context: context,
-                                                  //           barrierDismissible:
-                                                  //               false,
-                                                  //           builder: (
-                                                  //             BuildContext
-                                                  //             context,
-                                                  //           ) {
-                                                  //             return Center(
-                                                  //               child: Text(
-                                                  //                 "Mohon tunggu sebentar...",
-                                                  //               ),
-                                                  //             );
-                                                  //           },
-                                                  //         );
-                                                  //         await _createCertificate(
-                                                  //           item['name'],
-                                                  //           calculateTime(item),
-                                                  //         );
-                                                  //         Navigator.of(
-                                                  //           context,
-                                                  //         ).pop(); // Close the dialog
-                                                  //       },
-                                                  //       child: Text(
-                                                  //         'e-certificate',
-                                                  //       ),
-                                                  //     ),
-                                                  SizedBox.shrink(),
+                                                  !showCertificate(item)
+                                                      ? SizedBox.shrink()
+                                                      : ElevatedButton(
+                                                        onPressed: () async {
+                                                          showDialog(
+                                                            context: context,
+                                                            barrierDismissible:
+                                                                false,
+                                                            builder: (
+                                                              BuildContext
+                                                              context,
+                                                            ) {
+                                                              return Center(
+                                                                child: Text(
+                                                                  "Mohon tunggu sebentar...",
+                                                                ),
+                                                              );
+                                                            },
+                                                          );
+                                                          await _createCertificate(
+                                                            item['name'],
+                                                            calculateTime(item),
+                                                          );
+                                                          Navigator.of(
+                                                            context,
+                                                          ).pop(); // Close the dialog
+                                                        },
+                                                        child: Text(
+                                                          'e-certificate',
+                                                        ),
+                                                      ),
                                                 ),
                                               ],
                                             );
@@ -334,11 +340,19 @@ class _TableScreenState extends State<TableScreen> {
                       Container(
                         width: double.infinity,
                         padding: EdgeInsets.all(16),
-                        color: Colors.grey[200],
-                        child: Text(
-                          '© 2025 Lari Terus',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 14, color: Colors.black),
+                        color: Colors.black,
+                        child: Column(
+                          children: [
+                            Image.asset('images/lariterus.png', height: 50),
+                            Text(
+                              '© 2025 Lari Terus',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
