@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
@@ -254,22 +253,39 @@ class _TableScreenState extends State<TableScreen> {
                                                   Text(calculateTime(item)),
                                                 ),
                                                 DataCell(
-                                                  // item['is_dnf'] == true ||
-                                                  //         (item['cp0'] == '' &&
-                                                  //             item['cp1'] == '')
-                                                  //     ? SizedBox.shrink()
-                                                  //     : ElevatedButton(
-                                                  //       onPressed: () {
-                                                  //         // _createCertificate(
-                                                  //         //   item['name'],
-                                                  //         //   calculateTime(item),
-                                                  //         // );
-                                                  //       },
-                                                  //       child: Text(
-                                                  //         'e-certificate',
-                                                  //       ),
-                                                  //     ),
-                                                  Spacer(),
+                                                  item['is_dnf'] == true ||
+                                                          (item['cp0'] == '' &&
+                                                              item['cp1'] == '')
+                                                      ? SizedBox.shrink()
+                                                      : ElevatedButton(
+                                                        onPressed: () async {
+                                                          showDialog(
+                                                            context: context,
+                                                            barrierDismissible:
+                                                                false,
+                                                            builder: (
+                                                              BuildContext
+                                                              context,
+                                                            ) {
+                                                              return Center(
+                                                                child: Text(
+                                                                  "Mohon tunggu sebentar...",
+                                                                ),
+                                                              );
+                                                            },
+                                                          );
+                                                          await _createCertificate(
+                                                            item['name'],
+                                                            calculateTime(item),
+                                                          );
+                                                          Navigator.of(
+                                                            context,
+                                                          ).pop(); // Close the dialog
+                                                        },
+                                                        child: Text(
+                                                          'e-certificate',
+                                                        ),
+                                                      ),
                                                 ),
                                               ],
                                             );
@@ -346,22 +362,22 @@ class _TableScreenState extends State<TableScreen> {
       Rect.fromLTWH(0, 0, pageSize.width, pageSize.height),
     );
     //Create font
-    final PdfFont nameFont = PdfStandardFont(PdfFontFamily.helvetica, 22);
-    final PdfFont controlFont = PdfStandardFont(PdfFontFamily.helvetica, 19);
+    final PdfFont nameFont = PdfStandardFont(PdfFontFamily.helvetica, 28);
+    final PdfFont controlFont = PdfStandardFont(PdfFontFamily.helvetica, 20);
     // final PdfFont dateFont = PdfStandardFont(PdfFontFamily.helvetica, 16);
     double x = _calculateXPosition(name, nameFont, pageSize.width);
     page.graphics.drawString(
       name,
       nameFont,
-      bounds: Rect.fromLTWH(x, 253, 0, 0),
-      brush: PdfSolidBrush(PdfColor(20, 58, 86)),
+      bounds: Rect.fromLTWH(x, 325, 0, 0),
+      brush: PdfSolidBrush(PdfColor(0, 0, 0)),
     );
     x = _calculateXPosition(time, controlFont, pageSize.width);
     page.graphics.drawString(
       time,
       controlFont,
-      bounds: Rect.fromLTWH(x, 340, 0, 0),
-      brush: PdfSolidBrush(PdfColor(20, 58, 86)),
+      bounds: Rect.fromLTWH(x, 475, 0, 0),
+      brush: PdfSolidBrush(PdfColor(0, 0, 0)),
     );
     //Save and launch the document
     final List<int> bytes = await document.save();
