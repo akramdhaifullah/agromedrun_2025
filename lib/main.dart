@@ -253,39 +253,40 @@ class _TableScreenState extends State<TableScreen> {
                                                   Text(calculateTime(item)),
                                                 ),
                                                 DataCell(
-                                                  item['is_dnf'] == true ||
-                                                          (item['cp0'] == '' &&
-                                                              item['cp1'] == '')
-                                                      ? SizedBox.shrink()
-                                                      : ElevatedButton(
-                                                        onPressed: () async {
-                                                          showDialog(
-                                                            context: context,
-                                                            barrierDismissible:
-                                                                false,
-                                                            builder: (
-                                                              BuildContext
-                                                              context,
-                                                            ) {
-                                                              return Center(
-                                                                child: Text(
-                                                                  "Mohon tunggu sebentar...",
-                                                                ),
-                                                              );
-                                                            },
-                                                          );
-                                                          await _createCertificate(
-                                                            item['name'],
-                                                            calculateTime(item),
-                                                          );
-                                                          Navigator.of(
-                                                            context,
-                                                          ).pop(); // Close the dialog
-                                                        },
-                                                        child: Text(
-                                                          'e-certificate',
-                                                        ),
-                                                      ),
+                                                  // item['is_dnf'] == true ||
+                                                  //         (item['cp0'] == '' &&
+                                                  //             item['cp1'] == '')
+                                                  //     ? SizedBox.shrink()
+                                                  //     : ElevatedButton(
+                                                  //       onPressed: () async {
+                                                  //         showDialog(
+                                                  //           context: context,
+                                                  //           barrierDismissible:
+                                                  //               false,
+                                                  //           builder: (
+                                                  //             BuildContext
+                                                  //             context,
+                                                  //           ) {
+                                                  //             return Center(
+                                                  //               child: Text(
+                                                  //                 "Mohon tunggu sebentar...",
+                                                  //               ),
+                                                  //             );
+                                                  //           },
+                                                  //         );
+                                                  //         await _createCertificate(
+                                                  //           item['name'],
+                                                  //           calculateTime(item),
+                                                  //         );
+                                                  //         Navigator.of(
+                                                  //           context,
+                                                  //         ).pop(); // Close the dialog
+                                                  //       },
+                                                  //       child: Text(
+                                                  //         'e-certificate',
+                                                  //       ),
+                                                  //     ),
+                                                  SizedBox.shrink(),
                                                 ),
                                               ],
                                             );
