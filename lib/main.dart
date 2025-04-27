@@ -343,7 +343,10 @@ class _TableScreenState extends State<TableScreen> {
                         color: Colors.black,
                         child: Column(
                           children: [
-                            Image.asset('images/lariterus.png', height: 50),
+                            Image.asset(
+                              'assets/images/lariterus.png',
+                              height: 50,
+                            ),
                             Text(
                               '© 2025 Lari Terus',
                               textAlign: TextAlign.center,
